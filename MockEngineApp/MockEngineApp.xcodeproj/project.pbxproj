@@ -1,0 +1,499 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		132D688CB88314178AD5F0B4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85983B238A153D9B64E57707 /* ContentView.swift */; };
+		2EF3C37E011088B303D7886B /* EmbeddedMockEngine in Frameworks */ = {isa = PBXBuildFile; productRef = AF94BED8BA33D993A8CCC0A1 /* EmbeddedMockEngine */; };
+		3960065692AFCB3F073F1AEC /* MockEngineAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */; };
+		52A35DADD788E2A8D58CAB08 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6C1978E1408914E440454B /* ServerManager.swift */; };
+		61D57B23D1C634B1B764B3AF /* MockEngineAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */; };
+		6BFD2092F28E4E865AD3175B /* ConfigurationPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */; };
+		6CE03C785D81B287703F2F61 /* ConfigurationPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */; };
+		7F3D406E333911DD5E517937 /* EmbeddedMockEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 6845169CB54A693C60ADEC58 /* EmbeddedMockEngine */; };
+		C82679072F871514001240CD /* EmbeddedMockEngine in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 6845169CB54A693C60ADEC58 /* EmbeddedMockEngine */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		C82679092F871518001240CD /* EmbeddedMockEngine in Embed Frameworks */ = {isa = PBXBuildFile; productRef = AF94BED8BA33D993A8CCC0A1 /* EmbeddedMockEngine */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F16AFDD3F3B2C94BB89AC5A2 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6C1978E1408914E440454B /* ServerManager.swift */; };
+		F9A434E28A6F8F4579585DA4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85983B238A153D9B64E57707 /* ContentView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C82679082F871514001240CD /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				C82679072F871514001240CD /* EmbeddedMockEngine in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C826790A2F871518001240CD /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				C82679092F871518001240CD /* EmbeddedMockEngine in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		78BE0FA003E39BCF4A65ECBA /* EmbeddedMockEngine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EmbeddedMockEngine; path = ..; sourceTree = SOURCE_ROOT; };
+		85983B238A153D9B64E57707 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9E7E647C4262516C1918399F /* MockEngine.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MockEngine.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AF44FCFED857A812A0B37BCB /* MockEngine.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MockEngine.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF6C1978E1408914E440454B /* ServerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
+		D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationPickerView.swift; sourceTree = "<group>"; };
+		F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockEngineAppApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CF68FEB3A4F219C957EEDA8C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2EF3C37E011088B303D7886B /* EmbeddedMockEngine in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E5D9D9FC63B0E90D57D2E317 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F3D406E333911DD5E517937 /* EmbeddedMockEngine in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		370392015ECB8C0BF63DC6EC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AF44FCFED857A812A0B37BCB /* MockEngine.app */,
+				9E7E647C4262516C1918399F /* MockEngine.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3BF4D24EF74ACBE4F340D06E = {
+			isa = PBXGroup;
+			children = (
+				87E0EC00582AC89E5E8DFD57 /* Packages */,
+				835A18F5DD0469368183BEFA /* Sources */,
+				370392015ECB8C0BF63DC6EC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		835A18F5DD0469368183BEFA /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */,
+				85983B238A153D9B64E57707 /* ContentView.swift */,
+				F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */,
+				CF6C1978E1408914E440454B /* ServerManager.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		87E0EC00582AC89E5E8DFD57 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				78BE0FA003E39BCF4A65ECBA /* EmbeddedMockEngine */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0EF5F158E3A57345E64DBA72 /* MockEngineApp-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FB1BF844AD5BCDBAAE0D9B2E /* Build configuration list for PBXNativeTarget "MockEngineApp-iOS" */;
+			buildPhases = (
+				133A6EA402052B34D4462AD6 /* Sources */,
+				E5D9D9FC63B0E90D57D2E317 /* Frameworks */,
+				C82679082F871514001240CD /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "MockEngineApp-iOS";
+			packageProductDependencies = (
+				6845169CB54A693C60ADEC58 /* EmbeddedMockEngine */,
+			);
+			productName = "MockEngineApp-iOS";
+			productReference = AF44FCFED857A812A0B37BCB /* MockEngine.app */;
+			productType = "com.apple.product-type.application";
+		};
+		100C67B52B166015CC49DA5B /* MockEngineApp-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 645B5F7C5FC1DC118778C9D4 /* Build configuration list for PBXNativeTarget "MockEngineApp-macOS" */;
+			buildPhases = (
+				E7FF7D3C199AF44E60AB1EAE /* Sources */,
+				CF68FEB3A4F219C957EEDA8C /* Frameworks */,
+				C826790A2F871518001240CD /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "MockEngineApp-macOS";
+			packageProductDependencies = (
+				AF94BED8BA33D993A8CCC0A1 /* EmbeddedMockEngine */,
+			);
+			productName = "MockEngineApp-macOS";
+			productReference = 9E7E647C4262516C1918399F /* MockEngine.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6EE6A1C6CA26532F67428D0C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2640;
+				TargetAttributes = {
+					0EF5F158E3A57345E64DBA72 = {
+						ProvisioningStyle = Automatic;
+					};
+					100C67B52B166015CC49DA5B = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9573CF12B71B6B0CE85F501C /* Build configuration list for PBXProject "MockEngineApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3BF4D24EF74ACBE4F340D06E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C82679062F871455001240CD /* XCLocalSwiftPackageReference "../../EmbeddedMockEngine" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 370392015ECB8C0BF63DC6EC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0EF5F158E3A57345E64DBA72 /* MockEngineApp-iOS */,
+				100C67B52B166015CC49DA5B /* MockEngineApp-macOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		133A6EA402052B34D4462AD6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6BFD2092F28E4E865AD3175B /* ConfigurationPickerView.swift in Sources */,
+				132D688CB88314178AD5F0B4 /* ContentView.swift in Sources */,
+				3960065692AFCB3F073F1AEC /* MockEngineAppApp.swift in Sources */,
+				52A35DADD788E2A8D58CAB08 /* ServerManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E7FF7D3C199AF44E60AB1EAE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6CE03C785D81B287703F2F61 /* ConfigurationPickerView.swift in Sources */,
+				F9A434E28A6F8F4579585DA4 /* ContentView.swift in Sources */,
+				61D57B23D1C634B1B764B3AF /* MockEngineAppApp.swift in Sources */,
+				F16AFDD3F3B2C94BB89AC5A2 /* ServerManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		24C7E433A8FAC95BC78FBF27 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.embeddedmockengine.app;
+				PRODUCT_NAME = MockEngine;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		73AF6BC7CEC3DB7DC2735922 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.embeddedmockengine.app;
+				PRODUCT_NAME = MockEngine;
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		A4984199E416DE2359CED46D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DED39F45DEC656645BB23FEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.embeddedmockengine.app;
+				PRODUCT_NAME = MockEngine;
+				SDKROOT = iphoneos;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E85AB2E0DCAA948B3FBD6D05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E93AB902D13CB0BCEDDACFDF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.embeddedmockengine.app;
+				PRODUCT_NAME = MockEngine;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		645B5F7C5FC1DC118778C9D4 /* Build configuration list for PBXNativeTarget "MockEngineApp-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24C7E433A8FAC95BC78FBF27 /* Debug */,
+				73AF6BC7CEC3DB7DC2735922 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9573CF12B71B6B0CE85F501C /* Build configuration list for PBXProject "MockEngineApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4984199E416DE2359CED46D /* Debug */,
+				E85AB2E0DCAA948B3FBD6D05 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FB1BF844AD5BCDBAAE0D9B2E /* Build configuration list for PBXNativeTarget "MockEngineApp-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E93AB902D13CB0BCEDDACFDF /* Debug */,
+				DED39F45DEC656645BB23FEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C82679062F871455001240CD /* XCLocalSwiftPackageReference "../../EmbeddedMockEngine" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../EmbeddedMockEngine;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6845169CB54A693C60ADEC58 /* EmbeddedMockEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EmbeddedMockEngine;
+		};
+		AF94BED8BA33D993A8CCC0A1 /* EmbeddedMockEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EmbeddedMockEngine;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 6EE6A1C6CA26532F67428D0C /* Project object */;
+}
