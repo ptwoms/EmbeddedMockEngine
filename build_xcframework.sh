@@ -25,6 +25,7 @@ set -euo pipefail
 SCHEME="EmbeddedMockEngine"
 OUTPUT_DIR="build/xcframework"
 ARCHIVES_DIR="build/archives"
+DERIVED_DATA_DIR="build/derived-data"
 SKIP_ZIP=false
 
 # ---------------------------------------------------------------------------
@@ -64,6 +65,98 @@ require_command() {
     command -v "$1" >/dev/null 2>&1 || die "'$1' is required but not found in PATH."
 }
 
+derived_data_path_for_archive() {
+    local archive_name="$1"
+    echo "${DERIVED_DATA_DIR}/${archive_name}"
+}
+
+framework_payload_root() {
+    local fw_path="$1"
+
+    if [[ -d "${fw_path}/Versions/A" ]]; then
+        echo "${fw_path}/Versions/A"
+    else
+        echo "${fw_path}"
+    fi
+}
+
+ensure_versioned_framework_links() {
+    local fw_path="$1"
+
+    if [[ -d "${fw_path}/Versions/A" ]]; then
+        ln -sfn "A" "${fw_path}/Versions/Current"
+        ln -sfn "Versions/Current/Headers" "${fw_path}/Headers"
+        ln -sfn "Versions/Current/Modules" "${fw_path}/Modules"
+    fi
+}
+
+find_swiftmodule_dir() {
+    local search_root="$1"
+    local candidate
+
+    while IFS= read -r candidate; do
+        if find "${candidate}" -maxdepth 2 -type f \
+            \( -name '*.swiftinterface' -o -name '*.private.swiftinterface' -o -name '*.swiftdoc' -o -name '*.abi.json' -o -name '*.swiftsourceinfo' \) \
+            | grep -q .; then
+            echo "${candidate}"
+            return 0
+        fi
+    done < <(find "${search_root}" -type d -name "${SCHEME}.swiftmodule" | sort)
+
+    return 1
+}
+
+find_swift_header() {
+    local search_root="$1"
+
+    find "${search_root}" -type f -name "${SCHEME}-Swift.h" | sort | head -1
+}
+
+write_module_map() {
+    local module_map_path="$1"
+
+    cat > "${module_map_path}" <<EOF
+framework module ${SCHEME} {
+  umbrella header "${SCHEME}-Swift.h"
+
+  export *
+  module * { export * }
+}
+EOF
+}
+
+enrich_framework_with_swift_artifacts() {
+    local archive_name="$1"
+    local fw_path="$2"
+    local derived_data_path
+    local payload_root
+    local modules_dir
+    local headers_dir
+    local swiftmodule_source
+    local swift_header_source
+
+    derived_data_path="$(derived_data_path_for_archive "${archive_name}")"
+    payload_root="$(framework_payload_root "${fw_path}")"
+    modules_dir="${payload_root}/Modules"
+    headers_dir="${payload_root}/Headers"
+
+    swiftmodule_source="$(find_swiftmodule_dir "${derived_data_path}")" \
+        || die "Swift module artifacts not found for ${archive_name} in ${derived_data_path}"
+
+    mkdir -p "${modules_dir}/${SCHEME}.swiftmodule"
+    cp -R "${swiftmodule_source}/." "${modules_dir}/${SCHEME}.swiftmodule/"
+
+    swift_header_source="$(find_swift_header "${derived_data_path}" || true)"
+    if [[ -n "${swift_header_source}" ]]; then
+        mkdir -p "${headers_dir}"
+        cp "${swift_header_source}" "${headers_dir}/${SCHEME}-Swift.h"
+        write_module_map "${modules_dir}/module.modulemap"
+        ensure_versioned_framework_links "${fw_path}"
+    else
+        echo "  WARNING: ${SCHEME}-Swift.h not found for ${archive_name}; skipping module.modulemap generation." >&2
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # Pre-flight checks
 # ---------------------------------------------------------------------------
@@ -78,8 +171,8 @@ echo "Using ${XCODE_VERSION}"
 # Clean previous artifacts
 # ---------------------------------------------------------------------------
 step "Cleaning previous build artifacts"
-rm -rf "${ARCHIVES_DIR}" "${XCFRAMEWORK_PATH}" "${ZIP_PATH}"
-mkdir -p "${ARCHIVES_DIR}" "${OUTPUT_DIR}"
+rm -rf "${ARCHIVES_DIR}" "${DERIVED_DATA_DIR}" "${XCFRAMEWORK_PATH}" "${ZIP_PATH}"
+mkdir -p "${ARCHIVES_DIR}" "${DERIVED_DATA_DIR}" "${OUTPUT_DIR}"
 
 # ---------------------------------------------------------------------------
 # Helper: archive for one platform
@@ -88,6 +181,9 @@ build_archive() {
     local destination="$1"
     local archive_name="$2"
     local archive_path="${ARCHIVES_DIR}/${archive_name}.xcarchive"
+    local derived_data_path
+
+    derived_data_path="$(derived_data_path_for_archive "${archive_name}")"
 
     step "Archiving for: ${destination}"
 
@@ -96,8 +192,12 @@ build_archive() {
         -scheme "${SCHEME}"
         -destination "${destination}"
         -archivePath "${archive_path}"
+        -derivedDataPath "${derived_data_path}"
+        -configuration Release
         SKIP_INSTALL=NO
         BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+        DEFINES_MODULE=YES
+        SWIFT_INSTALL_OBJC_HEADER=YES
     )
 
     if command -v xcpretty >/dev/null 2>&1; then
@@ -133,6 +233,11 @@ find_framework() {
 IOS_FW=$(find_framework "${SCHEME}-iOS")
 SIM_FW=$(find_framework "${SCHEME}-iOS-Simulator")
 MACOS_FW=$(find_framework "${SCHEME}-macOS")
+
+step "Restoring Swift module metadata into archived frameworks"
+enrich_framework_with_swift_artifacts "${SCHEME}-iOS" "${IOS_FW}"
+enrich_framework_with_swift_artifacts "${SCHEME}-iOS-Simulator" "${SIM_FW}"
+enrich_framework_with_swift_artifacts "${SCHEME}-macOS" "${MACOS_FW}"
 
 # ---------------------------------------------------------------------------
 # Create fat (universal) binaries for multi-arch slices
