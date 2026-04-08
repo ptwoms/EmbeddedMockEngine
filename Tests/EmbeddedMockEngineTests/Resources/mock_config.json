@@ -1,0 +1,85 @@
+{
+  "settings": {
+    "port": 0,
+    "logRequests": false
+  },
+  "routes": [
+    {
+      "id": "list-users",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/api/users"
+      },
+      "response": {
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFile": "Responses/users.json"
+      }
+    },
+    {
+      "id": "get-user-by-id",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/api/users/{id}"
+      },
+      "response": {
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": "{\"id\": 1, \"name\": \"Alice\"}"
+      },
+      "priority": 10
+    },
+    {
+      "id": "create-user",
+      "request": {
+        "method": "POST",
+        "urlPattern": "/api/users",
+        "headers": {
+          "content-type": "application/json"
+        }
+      },
+      "response": {
+        "statusCode": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": "{\"id\": 42, \"name\": \"Bob\"}"
+      }
+    },
+    {
+      "id": "list-posts",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/api/posts",
+        "queryParameters": {
+          "page": "1"
+        }
+      },
+      "response": {
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFile": "Responses/posts.json"
+      }
+    },
+    {
+      "id": "wildcard-assets",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/assets/**"
+      },
+      "response": {
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "text/plain"
+        },
+        "body": "asset content"
+      }
+    }
+  ]
+}
