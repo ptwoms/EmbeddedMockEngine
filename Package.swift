@@ -10,6 +10,7 @@ let package = Package(
     products: [
         .library(
             name: "EmbeddedMockEngine",
+            type: .dynamic,
             targets: ["EmbeddedMockEngine"]
         )
     ],
