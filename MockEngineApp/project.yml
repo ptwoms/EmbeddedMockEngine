@@ -1,0 +1,115 @@
+# project.yml — XcodeGen specification for the MockEngine standalone app.
+#
+# This file defines the iOS and macOS app targets SEPARATELY from the
+# EmbeddedMockEngine library. The library is consumed as a local Swift Package
+# dependency, keeping the app binary completely decoupled from the
+# library/XCFramework targets.
+#
+# Usage:
+#   brew install xcodegen   # (one-time)
+#   cd MockEngineApp
+#   xcodegen generate
+#   open MockEngineApp.xcodeproj
+#
+# The generated Xcode project will reference the parent directory's Package.swift
+# as a local Swift package, so changes to the library are immediately reflected
+# in the app without any copy or pod-install step.
+
+name: MockEngineApp
+options:
+  bundleIdPrefix: com.embeddedmockengine
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+
+packages:
+  EmbeddedMockEngine:
+    path: ..
+
+targets:
+
+  # ── iOS App ──────────────────────────────────────────────────────────
+
+  MockEngineApp-iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Sources
+        type: group
+    resources:
+      - path: Resources
+        type: group
+      - path: Assets.xcassets
+        type: group
+    dependencies:
+      - package: EmbeddedMockEngine
+    settings:
+      base:
+        INFOPLIST_FILE: Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.embeddedmockengine.app
+        PRODUCT_NAME: MockEngine
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+
+  # ── macOS App ────────────────────────────────────────────────────────
+
+  MockEngineApp-macOS:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: Sources
+        type: group
+    resources:
+      - path: Resources
+        type: group
+      - path: Assets.xcassets
+        type: group
+    dependencies:
+      - package: EmbeddedMockEngine
+    settings:
+      base:
+        INFOPLIST_FILE: Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.embeddedmockengine.app
+        PRODUCT_NAME: MockEngine
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: true
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+
+schemes:
+  MockEngineApp-iOS:
+    build:
+      targets:
+        MockEngineApp-iOS: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+  MockEngineApp-macOS:
+    build:
+      targets:
+        MockEngineApp-macOS: all
+    run:
+      config: Debug
+    archive:
+      config: Release
