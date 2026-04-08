@@ -198,7 +198,7 @@ final class MockServer: @unchecked Sendable {
     // MARK: - Socket creation
 
     private static func makeListeningSocket(port: UInt16) throws -> (Int32, UInt16) {
-        let fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+        let fd = socket(AF_INET, Int32(SOCK_STREAM), 0)
         guard fd >= 0 else {
             throw MockServerError.socketCreationFailed(errno)
         }
