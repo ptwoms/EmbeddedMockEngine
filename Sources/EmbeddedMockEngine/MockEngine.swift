@@ -45,9 +45,21 @@ public actor MockEngine {
     private let server = MockServer()
     private var running = false
 
+    /// Optional callback invoked on every request for external logging (e.g. UI).
+    /// Parameters: HTTP method, raw URL, matched route ID (nil if 404), status code.
+    private var requestObserver: (@Sendable (String, String, String?, Int) -> Void)?
+
     // MARK: - Init
 
     public init() {}
+
+    /// Sets an observer that is called for every incoming request.
+    ///
+    /// - Parameter observer: A closure receiving `(method, rawURL, matchedRouteID?, statusCode)`.
+    ///   Pass `nil` to remove the observer.
+    public func setRequestObserver(_ observer: (@Sendable (String, String, String?, Int) -> Void)?) {
+        self.requestObserver = observer
+    }
 
     // MARK: - Configuration
 
@@ -115,8 +127,13 @@ public actor MockEngine {
         guard !running else { throw MockEngineError.alreadyRunning }
 
         let effectivePort = settings.port ?? port
+        let effectiveBindAddress = settings.bindAddress ?? "127.0.0.1"
         let handler = makeRequestHandler()
-        let assignedPort = try server.start(port: effectivePort, requestHandler: handler)
+        let assignedPort = try server.start(
+            port: effectivePort,
+            bindAddress: effectiveBindAddress,
+            requestHandler: handler
+        )
         running = true
         return assignedPort
     }
@@ -137,6 +154,9 @@ public actor MockEngine {
 
     /// `true` while the server is running.
     public var isRunning: Bool { running }
+
+    /// The number of currently loaded routes.
+    public var routeCount: Int { routes.count }
 
     // MARK: - Private helpers
 
@@ -178,6 +198,7 @@ public actor MockEngine {
             if settings.logRequests == true {
                 print("[MockEngine] No route matched – returning 404")
             }
+            requestObserver?(request.method, request.rawURL, nil, 404)
             return .notFound(message: "No mock route matched \(request.method) \(request.path)")
         }
 
@@ -192,7 +213,9 @@ public actor MockEngine {
             try? await Task.sleep(nanoseconds: ns)
         }
 
-        return responseProvider.resolve(definition: route.response)
+        let response = responseProvider.resolve(definition: route.response)
+        requestObserver?(request.method, request.rawURL, route.id, response.statusCode)
+        return response
     }
 }
 

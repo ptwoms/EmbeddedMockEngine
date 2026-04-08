@@ -33,11 +33,20 @@ public struct MockServerSettings: Codable, Sendable {
     public let globalDelay: TimeInterval?
     /// Whether to log each incoming request to stdout.
     public let logRequests: Bool?
+    /// Address to bind to. Use `"127.0.0.1"` (default) for loopback only,
+    /// or `"0.0.0.0"` to accept connections from other apps / devices.
+    public let bindAddress: String?
 
-    public init(port: UInt16? = nil, globalDelay: TimeInterval? = nil, logRequests: Bool? = nil) {
+    public init(
+        port: UInt16? = nil,
+        globalDelay: TimeInterval? = nil,
+        logRequests: Bool? = nil,
+        bindAddress: String? = nil
+    ) {
         self.port = port
         self.globalDelay = globalDelay
         self.logRequests = logRequests
+        self.bindAddress = bindAddress
     }
 }
 
