@@ -258,7 +258,7 @@ final class MockServer: @unchecked Sendable {
     ///
     /// `EINTR` means the blocking syscall was interrupted by a signal (for example during
     /// app lifecycle transitions) and does not indicate a fatal socket failure.
-    static func shouldContinueAcceptLoop(afterAcceptError error: Int32) -> Bool {
+    internal static func shouldContinueAcceptLoop(afterAcceptError error: Int32) -> Bool {
         error == EINTR
     }
 
