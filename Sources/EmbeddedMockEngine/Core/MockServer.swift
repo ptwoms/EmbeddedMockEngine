@@ -103,7 +103,7 @@ final class MockServer: @unchecked Sendable {
             while true {
                 let clientFD = accept(serverFD, nil, nil)
                 guard clientFD >= 0 else {
-                    if currentErrno() == EINTR {
+                    if Self.shouldContinueAcceptLoop(afterAcceptError: currentErrno()) {
                         // Transient interruption (e.g. app lifecycle signal) — keep accepting.
                         continue
                     }
@@ -253,6 +253,10 @@ final class MockServer: @unchecked Sendable {
     }
 
     // MARK: - Platform helpers
+
+    static func shouldContinueAcceptLoop(afterAcceptError error: Int32) -> Bool {
+        error == EINTR
+    }
 
     private static func loopbackAddress() -> in_addr_t {
 #if canImport(Darwin)
