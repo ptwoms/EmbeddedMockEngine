@@ -262,7 +262,7 @@ final class MockServer: @unchecked Sendable {
 
     private static func isRecoverableAcceptError(_ errorCode: Int32) -> Bool {
         switch errorCode {
-        case EINTR, EAGAIN, ECONNABORTED:
+        case EINTR, ECONNABORTED:
             return true
         default:
             return false
