@@ -103,6 +103,10 @@ final class MockServer: @unchecked Sendable {
             while true {
                 let clientFD = accept(serverFD, nil, nil)
                 guard clientFD >= 0 else {
+                    if currentErrno() == EINTR {
+                        // Transient interruption (e.g. app lifecycle signal) — keep accepting.
+                        continue
+                    }
                     continuation.finish()
                     return
                 }
@@ -198,7 +202,12 @@ final class MockServer: @unchecked Sendable {
     // MARK: - Socket creation
 
     private static func makeListeningSocket(port: UInt16) throws -> (Int32, UInt16) {
-        let fd = socket(AF_INET, Int32(SOCK_STREAM), 0)
+        #if canImport(Darwin)
+        let socketType = Int32(SOCK_STREAM)
+        #elseif canImport(Glibc)
+        let socketType = Int32(SOCK_STREAM.rawValue)
+        #endif
+        let fd = socket(AF_INET, socketType, 0)
         guard fd >= 0 else {
             throw MockServerError.socketCreationFailed(errno)
         }
@@ -262,6 +271,15 @@ private func closeSocket(_ fd: Int32) {
 #else
     _ = Glibc.close(fd)
 #endif
+}
+
+@inline(__always)
+private func currentErrno() -> Int32 {
+    #if canImport(Darwin)
+    return Darwin.errno
+    #else
+    return Glibc.errno
+    #endif
 }
 
 private extension NSLock {
