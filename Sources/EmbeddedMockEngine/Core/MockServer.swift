@@ -207,7 +207,7 @@ final class MockServer: @unchecked Sendable {
         #elseif canImport(Glibc)
         let socketType = Int32(SOCK_STREAM.rawValue)
         #else
-        #error("Unsupported platform: expected Darwin or Glibc for POSIX sockets")
+        #error("Unsupported platform: expected Darwin or glibc for POSIX sockets")
         #endif
         let fd = socket(AF_INET, socketType, 0)
         guard fd >= 0 else {
@@ -281,7 +281,7 @@ private func closeSocket(_ fd: Int32) {
 #elseif canImport(Glibc)
     _ = Glibc.close(fd)
 #else
-#error("Unsupported platform: expected Darwin or Glibc for close()")
+#error("Unsupported platform: expected Darwin or glibc for close()")
 #endif
 }
 
@@ -292,7 +292,7 @@ private func currentErrno() -> Int32 {
     #elseif canImport(Glibc)
     return Glibc.errno
     #else
-    #error("Unsupported platform: expected Darwin or Glibc for errno")
+    #error("Unsupported platform: expected Darwin or glibc for errno")
     #endif
 }
 

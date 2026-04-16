@@ -13,6 +13,16 @@ final class MockServerTests: XCTestCase {
     }
 
     func test_shouldContinueAcceptLoop_falseForNonEINTR() {
-        XCTAssertFalse(MockServer.shouldContinueAcceptLoop(afterAcceptError: EINVAL))
+        let nonInterruptingErrors: [Int32] = [
+            EINVAL,
+            EAGAIN,
+            EWOULDBLOCK,
+            ECONNABORTED,
+            EMFILE
+        ]
+
+        for error in nonInterruptingErrors {
+            XCTAssertFalse(MockServer.shouldContinueAcceptLoop(afterAcceptError: error))
+        }
     }
 }
