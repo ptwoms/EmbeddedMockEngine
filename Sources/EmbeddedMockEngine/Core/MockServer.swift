@@ -254,6 +254,10 @@ final class MockServer: @unchecked Sendable {
 
     // MARK: - Platform helpers
 
+    /// Returns `true` when an `accept()` failure is transient and the loop should continue.
+    ///
+    /// `EINTR` means the blocking syscall was interrupted by a signal (for example during
+    /// app lifecycle transitions) and does not indicate a fatal socket failure.
     static func shouldContinueAcceptLoop(afterAcceptError error: Int32) -> Bool {
         error == EINTR
     }
