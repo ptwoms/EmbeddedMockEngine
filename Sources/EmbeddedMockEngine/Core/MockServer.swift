@@ -34,8 +34,8 @@ final class MockServer: @unchecked Sendable {
     private var serverFD: Int32 = -1
     private var _port: UInt16 = 0
     private var acceptThread: Thread?
-    private var connectionsContinuation: AsyncStream<Int32>.Continuation?
-    private var serverTask: Task<Void, Never>?
+    private var connectionsContinuation: AsyncStream<Int32>.Continuation?  // guarded by stateLock
+    private var serverTask: Task<Void, Never>?                              // guarded by stateLock
 
     var port: UInt16 {
         stateLock.withLock { _port }
@@ -69,11 +69,17 @@ final class MockServer: @unchecked Sendable {
 
     /// Stops the server and waits for pending work to finish.
     func stop() {
-        let fd = stateLock.withLock { () -> Int32 in
-            let old = serverFD
+        // Atomically reset all server state under the lock and capture the values
+        // that need cleanup so we never race with startAcceptLoop.
+        let (fd, continuation, task) = stateLock.withLock { () -> (Int32, AsyncStream<Int32>.Continuation?, Task<Void, Never>?) in
+            let oldFD   = serverFD
+            let oldCont = connectionsContinuation
+            let oldTask = serverTask
             serverFD = -1
-            _port = 0
-            return old
+            _port    = 0
+            connectionsContinuation = nil
+            serverTask              = nil
+            return (oldFD, oldCont, oldTask)
         }
 
         // Close the server socket – this causes accept() to return with an error,
@@ -82,11 +88,9 @@ final class MockServer: @unchecked Sendable {
             closeSocket(fd)
         }
 
-        connectionsContinuation?.finish()
-        connectionsContinuation = nil
-
-        serverTask?.cancel()
-        serverTask = nil
+        // Finish the stream (safe to call multiple times) and cancel the task.
+        continuation?.finish()
+        task?.cancel()
     }
 
     // MARK: - Accept loop
@@ -115,7 +119,8 @@ final class MockServer: @unchecked Sendable {
         stateLock.withLock { acceptThread = thread }
 
         // Structured-concurrency task – processes connections concurrently.
-        serverTask = Task.detached(priority: .utility) { [weak self] in
+        // Assign under the lock so stop() always sees a consistent value.
+        let task = Task.detached(priority: .utility) { [weak self] in
             await withTaskGroup(of: Void.self) { group in
                 for await clientFD in stream {
                     guard !Task.isCancelled else {
@@ -128,6 +133,7 @@ final class MockServer: @unchecked Sendable {
                 }
             }
         }
+        stateLock.withLock { serverTask = task }
     }
 
     // MARK: - Connection handling
@@ -138,8 +144,9 @@ final class MockServer: @unchecked Sendable {
     ) async {
         defer { closeSocket(clientFD) }
 
-        // Set a receive timeout so a slow/malicious client can't stall us.
-        setReceiveTimeout(clientFD, seconds: 5)
+        // Allow up to 30 seconds to receive the full request so that large
+        // multipart/form-data uploads complete without timing out.
+        setReceiveTimeout(clientFD, seconds: 30)
 
         guard
             let requestData = readHTTPRequest(from: clientFD),
@@ -160,7 +167,8 @@ final class MockServer: @unchecked Sendable {
     /// Reads bytes from `fd` until a complete HTTP request is accumulated.
     private func readHTTPRequest(from fd: Int32) -> Data? {
         var buffer = Data()
-        let chunkSize = 4096
+        // 64 KB per recv() call – reduces syscall overhead for large uploads.
+        let chunkSize = 64 * 1024
         var chunk = [UInt8](repeating: 0, count: chunkSize)
 
         while true {
@@ -198,7 +206,11 @@ final class MockServer: @unchecked Sendable {
     // MARK: - Socket creation
 
     private static func makeListeningSocket(port: UInt16) throws -> (Int32, UInt16) {
-        let fd = socket(AF_INET, Int32(SOCK_STREAM), 0)
+#if canImport(Darwin)
+        let fd = socket(AF_INET, SOCK_STREAM, 0)
+#else
+        let fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+#endif
         guard fd >= 0 else {
             throw MockServerError.socketCreationFailed(errno)
         }

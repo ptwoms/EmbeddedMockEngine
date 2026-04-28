@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - MockEngine
 
 /// The primary public interface for EmbeddedMockEngine.
@@ -44,10 +48,33 @@ public actor MockEngine {
 
     private let server = MockServer()
     private var running = false
+    /// The port the server was last started on (0 = not started yet).
+    /// Used to restore the same port when the app returns to the foreground.
+    private var lastStartedPort: UInt16 = 0
+
+    // MARK: - App-lifecycle observers (iOS only)
+
+#if canImport(UIKit)
+    /// Retained references to the NotificationCenter observer tokens.
+    /// Marked `nonisolated(unsafe)` so they can be cleared from `deinit`,
+    /// which runs outside the actor's isolation domain.
+    nonisolated(unsafe) private var backgroundObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var foregroundObserver: NSObjectProtocol?
+#endif
 
     // MARK: - Init
 
-    public init() {}
+    public init() {
+#if canImport(UIKit)
+        registerAppLifecycleObservers()
+#endif
+    }
+
+    deinit {
+#if canImport(UIKit)
+        removeAppLifecycleObservers()
+#endif
+    }
 
     // MARK: - Configuration
 
@@ -118,6 +145,7 @@ public actor MockEngine {
         let handler = makeRequestHandler()
         let assignedPort = try server.start(port: effectivePort, requestHandler: handler)
         running = true
+        lastStartedPort = assignedPort
         return assignedPort
     }
 
@@ -194,6 +222,70 @@ public actor MockEngine {
 
         return responseProvider.resolve(definition: route.response)
     }
+
+    // MARK: - App lifecycle (iOS)
+
+#if canImport(UIKit)
+    /// Registers for `UIApplication` background / foreground notifications so the
+    /// server is stopped when the app enters the background and restarted when it
+    /// returns to the foreground.
+    private nonisolated func registerAppLifecycleObservers() {
+        backgroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { await self.handleDidEnterBackground() }
+        }
+
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { await self.handleWillEnterForeground() }
+        }
+    }
+
+    private nonisolated func removeAppLifecycleObservers() {
+        if let obs = backgroundObserver {
+            NotificationCenter.default.removeObserver(obs)
+            backgroundObserver = nil
+        }
+        if let obs = foregroundObserver {
+            NotificationCenter.default.removeObserver(obs)
+            foregroundObserver = nil
+        }
+    }
+
+    /// Called when the app enters the background: stops the server gracefully.
+    private func handleDidEnterBackground() {
+        guard running else { return }
+        server.stop()
+        running = false
+    }
+
+    /// Called when the app returns to the foreground: restarts the server on the
+    /// same port it was previously listening on (falls back to any free port if the
+    /// previous port is no longer available).
+    private func handleWillEnterForeground() {
+        guard !running else { return }
+        let port = lastStartedPort
+        let handler = makeRequestHandler()
+        // Try the original port first; fall back to OS-assigned port on failure.
+        if let assignedPort = try? server.start(port: port, requestHandler: handler) {
+            running = true
+            lastStartedPort = assignedPort
+        } else if port != 0, let assignedPort = try? server.start(port: 0, requestHandler: handler) {
+            running = true
+            lastStartedPort = assignedPort
+        } else {
+            print("[MockEngine] Failed to restart server after returning to foreground")
+        }
+    }
+#endif
 }
 
 // MARK: - MockEngineError
