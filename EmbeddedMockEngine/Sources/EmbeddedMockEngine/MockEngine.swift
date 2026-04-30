@@ -1,4 +1,47 @@
 import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
+#if canImport(UIKit)
+import UIKit
+
+// MARK: - LifecycleObserver
+
+/// Observes UIApplication foreground/background notifications on behalf of MockEngine.
+///
+/// Extracted into its own class because actors cannot use `@objc` selectors and
+/// `NotificationCenter` block-based observation needs a non-isolated owner.
+private final class LifecycleObserver: @unchecked Sendable {
+    private var foregroundToken: NSObjectProtocol?
+    private var backgroundToken: NSObjectProtocol?
+
+    init(
+        onWillEnterForeground: @escaping @Sendable () -> Void,
+        onDidEnterBackground: @escaping @Sendable () -> Void
+    ) {
+        foregroundToken = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: nil
+        ) { _ in onWillEnterForeground() }
+
+        backgroundToken = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: nil
+        ) { _ in onDidEnterBackground() }
+    }
+
+    deinit {
+        [foregroundToken, backgroundToken].compactMap { $0 }.forEach {
+            NotificationCenter.default.removeObserver($0)
+        }
+    }
+}
+#endif
+
 
 // MARK: - MockEngine
 
@@ -45,9 +88,24 @@ public actor MockEngine {
     private let server = MockServer()
     private var running = false
 
+    /// The port the server was last successfully bound to, used for transparent restarts.
+    private var lastBoundPort: UInt16 = 0
+    /// The bind address used at the last successful `start()`.
+    private var lastBindAddress: String = "127.0.0.1"
+
+    #if canImport(UIKit)
+    private var lifecycleObserver: LifecycleObserver?
+    #endif
+
     /// Optional callback invoked on every request for external logging (e.g. UI).
     /// Parameters: HTTP method, raw URL, matched route ID (nil if 404), status code.
     private var requestObserver: (@Sendable (String, String, String?, Int) -> Void)?
+
+    /// Called after the engine transparently restarts the server on iOS foreground return.
+    ///
+    /// Receives the new port number the server is listening on.  Useful for callers that
+    /// need to update UI or stored state when the engine self-heals after being backgrounded.
+    public var foregroundRestartHandler: (@Sendable (UInt16) -> Void)?
 
     // MARK: - Init
 
@@ -135,25 +193,86 @@ public actor MockEngine {
             requestHandler: handler
         )
         running = true
+        lastBoundPort = assignedPort
+        lastBindAddress = effectiveBindAddress
+        if settings.logRequests {
+            print("[MockEngine] Server started on \(effectiveBindAddress):\(assignedPort)")
+        }
+
+        #if canImport(UIKit)
+        registerLifecycleObserver()
+        #endif
+
         return assignedPort
     }
 
     /// Stops the mock server.
     public func stop() async {
-        guard running else { return }
+        guard running else {
+            if settings.logRequests {
+                print("[MockEngine] Stop called but server is not running")
+            }
+            return
+        }
+        #if canImport(UIKit)
+        lifecycleObserver = nil
+        #endif
         server.stop()
+        if settings.logRequests {
+            print("[MockEngine] Server stopped on \(lastBindAddress ?? "unknown"):\(lastBoundPort)")
+        }
         running = false
+        lastBoundPort = 0
     }
 
     // MARK: - Introspection
 
     /// The port the server is listening on, or `nil` if not running.
     public var currentPort: UInt16? {
-        running ? server.port : nil
+        (running && server.isRunning) ? server.port : nil
     }
 
     /// `true` while the server is running.
-    public var isRunning: Bool { running }
+    public var isRunning: Bool { running && server.isRunning }
+
+    /// Performs an active probe against this mock server.
+    ///
+    /// Uses a lightweight TCP connect to verify the port is actually accepting
+    /// connections, without going through the HTTP/URLSession stack.
+    ///
+    /// - Returns: `true` if the TCP connection succeeds, otherwise `false`.
+    public func healthCheck() -> Bool {
+        guard running, server.isRunning, let port = currentPort else { return false }
+
+#if canImport(Darwin)
+        let fd = Darwin.socket(AF_INET, SOCK_STREAM, 0)
+#else
+        let fd = Glibc.socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+#endif
+        guard fd >= 0 else { return false }
+        defer {
+#if canImport(Darwin)
+            Darwin.close(fd)
+#else
+            Glibc.close(fd)
+#endif
+        }
+
+        var addr = sockaddr_in()
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = port.bigEndian
+#if canImport(Darwin)
+        addr.sin_addr.s_addr = INADDR_LOOPBACK.bigEndian
+#else
+        addr.sin_addr.s_addr = UInt32(0x7f000001).bigEndian
+#endif
+
+        let result = withUnsafeBytes(of: &addr) { ptr in
+            connect(fd, ptr.baseAddress!.assumingMemoryBound(to: sockaddr.self),
+                    socklen_t(MemoryLayout<sockaddr_in>.size))
+        }
+        return result == 0
+    }
 
     /// The number of currently loaded routes.
     public var routeCount: Int { routes.count }
@@ -188,21 +307,87 @@ public actor MockEngine {
         }
     }
 
+    // MARK: - iOS lifecycle
+
+    #if canImport(UIKit)
+    /// Registers for UIApplication foreground/background events.
+    /// Safe to call multiple times — always replaces any previous observer.
+    private func registerLifecycleObserver() {
+        lifecycleObserver = LifecycleObserver(
+            onWillEnterForeground: { [weak self] in
+                Task { await self?.handleWillEnterForeground() }
+            },
+            onDidEnterBackground: { [weak self] in
+                Task { await self?.handleDidEnterBackground() }
+            }
+        )
+    }
+
+    /// Called when the app is about to return to the foreground.
+    ///
+    /// If the engine was running but its socket was killed by iOS while the app
+    /// was suspended, this method transparently restarts the server on the same
+    /// port and fires `foregroundRestartHandler` so callers can update their UI.
+    private func handleWillEnterForeground() async {
+        guard running else { return }
+
+        // Socket still alive — nothing to do.
+        if healthCheck() { return }
+        
+        if settings.logRequests {
+            print("[MockEngine] Detected dead socket on foreground return; restarting server…")
+        }
+
+        // The socket was killed while in the background. Tear down stale state
+        // and bind a fresh socket on the same port.
+        server.stop()
+        running = false
+
+        let portToReuse = lastBoundPort
+        let bindAddr = lastBindAddress
+        let handler = makeRequestHandler()
+
+        do {
+            let newPort = try server.start(
+                port: portToReuse,
+                bindAddress: bindAddr,
+                requestHandler: handler
+            )
+            running = true
+            lastBoundPort = newPort
+            foregroundRestartHandler?(newPort)
+        } catch {
+            print("[MockEngine] Auto-restart after foreground failed: \(error)")
+        }
+    }
+
+    /// Called when the app enters the background.
+    ///
+    /// Currently a no-op at the framework level; reserved for future use
+    /// (e.g. signalling a graceful-drain period before suspension).
+    private func handleDidEnterBackground() async {}
+    #endif
+
     private func handleRequest(_ request: HTTPRequest) async -> HTTPResponse {
-        if settings.logRequests == true {
+        if settings.logRequests {
             print("[MockEngine] \(request.method) \(request.rawURL)")
         }
 
         // Find the first matching route (already sorted by priority)
         guard let route = routes.first(where: { RequestMatcher.matches(request: request, against: $0.request) }) else {
-            if settings.logRequests == true {
+            // Built-in health endpoint: GET /health returns 200 unless overridden by a configured route
+            if request.method == "GET" && request.path == "/health" {
+                requestObserver?(request.method, request.rawURL, nil, 200)
+                return .ok()
+            }
+            if settings.logRequests {
                 print("[MockEngine] No route matched – returning 404")
             }
             requestObserver?(request.method, request.rawURL, nil, 404)
             return .notFound(message: "No mock route matched \(request.method) \(request.path)")
         }
 
-        if settings.logRequests == true {
+        if settings.logRequests {
             print("[MockEngine] Matched route '\(route.id)'")
         }
 

@@ -47,6 +47,10 @@ final class ServerManager: ObservableObject {
     // MARK: - Private state
 
     private let engine = MockEngine()
+    private var monitorTask: Task<Void, Never>?
+    private let monitorIntervalNanoseconds: UInt64 = 2_000_000_000
+    private var isServerTransitionInProgress = false
+    private var isHealthCheckRestartInProgress = false
 
     #if os(iOS)
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -64,10 +68,21 @@ final class ServerManager: ObservableObject {
         #endif
     }
 
+    deinit {
+        monitorTask?.cancel()
+    }
+
     // MARK: - Server lifecycle
 
     func startServer() async {
-        guard !isRunning else { return }
+        guard !isRunning, !isServerTransitionInProgress else { return }
+        isServerTransitionInProgress = true
+        defer { isServerTransitionInProgress = false }
+        guard port != 0 else {
+            statusMessage = "Invalid port: 0. Please choose a specific port."
+            return
+        }
+
         do {
             await engine.setRequestObserver { [weak self] method, url, routeID, statusCode in
                 let entry = RequestLogEntry(
@@ -91,6 +106,7 @@ final class ServerManager: ObservableObject {
             isRunning = true
             routeCount = await engine.routeCount
             statusMessage = "Server running on port \(assigned)"
+            startHealthMonitor()
 
             #if os(iOS)
             if isBackgroundModeEnabled {
@@ -103,7 +119,11 @@ final class ServerManager: ObservableObject {
     }
 
     func stopServer() async {
-        guard isRunning else { return }
+        guard isRunning, !isServerTransitionInProgress else { return }
+        isServerTransitionInProgress = true
+        defer { isServerTransitionInProgress = false }
+
+        stopHealthMonitor()
         await engine.stop()
         isRunning = false
         assignedPort = nil
@@ -116,6 +136,45 @@ final class ServerManager: ObservableObject {
 
     func clearLog() {
         logEntries.removeAll()
+    }
+
+    private func startHealthMonitor() {
+        monitorTask?.cancel()
+        monitorTask = Task { [weak self] in
+            guard let self else { return }
+
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: monitorIntervalNanoseconds)
+                guard !Task.isCancelled else { break }
+
+                let isHealthy = await self.engine.healthCheck()
+                if isHealthy { continue }
+                if self.isHealthCheckRestartInProgress { continue }
+
+                self.isHealthCheckRestartInProgress = true
+                defer { self.isHealthCheckRestartInProgress = false }
+
+                self.isRunning = false
+                self.assignedPort = nil
+                self.statusMessage = "Health check failed — restarting server"
+
+                await self.engine.stop()
+
+                do {
+                    let restartedPort = try await self.engine.start(port: self.port)
+                    self.assignedPort = restartedPort
+                    self.isRunning = true
+                    self.statusMessage = "Server restarted on port \(restartedPort)"
+                } catch {
+                    self.statusMessage = "Server unavailable: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func stopHealthMonitor() {
+        monitorTask?.cancel()
+        monitorTask = nil
     }
 
     // MARK: - Configuration
@@ -162,7 +221,8 @@ final class ServerManager: ObservableObject {
         case "start":
             if let portParam = URLComponents(url: url, resolvingAgainstBaseURL: false)?
                 .queryItems?.first(where: { $0.name == "port" })?.value,
-               let requestedPort = UInt16(portParam) {
+               let requestedPort = UInt16(portParam),
+               requestedPort != 0 {
                 port = requestedPort
             }
             await startServer()
@@ -195,6 +255,12 @@ final class ServerManager: ObservableObject {
             name: UIApplication.willEnterForegroundNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
     }
 
     @objc private func appDidEnterBackground() {
@@ -206,6 +272,49 @@ final class ServerManager: ObservableObject {
         // Stop the silent audio when returning to foreground to save resources.
         stopSilentAudio()
         endBackgroundTask()
+
+        // Sync published state with the engine.
+        // The engine may have transparently restarted its socket via its own
+        // lifecycle observer while the app was backgrounded/suspended.
+        guard isRunning, !isServerTransitionInProgress else { return }
+        Task {
+            // Give the engine's own foreground handler a moment to complete
+            // before we read back its state.
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100 ms
+            let enginePort = await engine.currentPort
+            if let enginePort {
+                assignedPort = enginePort
+                statusMessage = "Server running on port \(enginePort)"
+            } else {
+                // Engine socket is gone and self-restart failed; let the health
+                // monitor's next tick trigger a full restart.
+                statusMessage = "Server recovering…"
+            }
+        }
+    }
+
+    @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+
+        switch type {
+        case .began:
+            // Audio was interrupted (e.g. phone call, Siri). Player stops automatically.
+            // The background task expiration handler is already in place as a safety net.
+            break
+
+        case .ended:
+            guard isRunning, isBackgroundModeEnabled else { return }
+            // Resume silent audio only if iOS signals it's safe to do so.
+            let shouldResume = (notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt)
+                .flatMap { AVAudioSession.InterruptionOptions(rawValue: $0) }
+                .map { $0.contains(.shouldResume) } ?? false
+            guard shouldResume else { return }
+            startSilentAudio()
+
+        @unknown default:
+            break
+        }
     }
 
     /// Activates background execution by starting a silent audio session and

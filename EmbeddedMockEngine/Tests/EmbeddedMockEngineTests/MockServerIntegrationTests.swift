@@ -82,6 +82,19 @@ final class MockServerIntegrationTests: XCTestCase {
         XCTAssertNil(port)
     }
 
+    func test_healthCheck_returnsTrueWhenServerIsAvailable() async throws {
+        let route = MockRoute(
+            id: "health",
+            request: MockRequestMatcher(method: .get, urlPattern: "/ping"),
+            response: MockResponseDefinition(statusCode: 200, body: "pong")
+        )
+        try await startEngine(routes: [route])
+
+        let healthy = await engine.healthCheck()
+        XCTAssertTrue(healthy)
+    }
+
+
     // MARK: - Inline response
 
     func test_inlineBody_returnedCorrectly() async throws {
@@ -248,6 +261,65 @@ final class MockServerIntegrationTests: XCTestCase {
         let (_, response) = try await get("/info")
         XCTAssertEqual(response.value(forHTTPHeaderField: "X-Custom"), "test-value")
     }
+    
+    // MARK: - Stop and restart
+    func test_stopAndRestart_serverHandlesRequestsAfterRestart() async throws {
+        let route = MockRoute(
+            id: "ping",
+            request: MockRequestMatcher(method: .get, urlPattern: "/ping"),
+            response: MockResponseDefinition(statusCode: 200, body: "pong")
+        )
+        try await startEngine(routes: [route])
+
+        // First request succeeds.
+        let (data1, resp1) = try await get("/ping")
+        XCTAssertEqual(resp1.statusCode, 200)
+        XCTAssertEqual(String(data: data1, encoding: .utf8), "pong")
+
+        // Stop and then restart on a different (OS-assigned) port.
+        await engine.stop()
+        let newPort = try await engine.start()
+        baseURL = URL(string: "http://localhost:\(newPort)")!
+
+        // Request on the new port should succeed.
+        let (data2, resp2) = try await get("/ping")
+        XCTAssertEqual(resp2.statusCode, 200)
+        XCTAssertEqual(String(data: data2, encoding: .utf8), "pong")
+    }
+
+    // MARK: - Large multipart/form-data upload
+
+    /// Sends a synthetic multipart body that is ~4 MB in size and verifies the
+    /// server reads the full payload and returns the configured response.
+    func test_largeMultipartUpload_handledCorrectly() async throws {
+        let route = MockRoute(
+            id: "upload",
+            request: MockRequestMatcher(method: .post, urlPattern: "/upload"),
+            response: MockResponseDefinition(statusCode: 200, body: #"{"status":"ok"}"#)
+        )
+        try await startEngine(routes: [route])
+
+        let boundary = "----MockBoundary1234567890"
+        let fieldHeader = "--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"large.bin\"\r\nContent-Type: application/octet-stream\r\n\r\n"
+        let fieldFooter = "\r\n--\(boundary)--\r\n"
+
+        // Build a 4 MB binary payload.
+        let payloadSize = 4 * 1024 * 1024
+        var bodyData = Data()
+        bodyData.append(contentsOf: fieldHeader.utf8)
+        bodyData.append(Data(repeating: 0xAB, count: payloadSize))
+        bodyData.append(contentsOf: fieldFooter.utf8)
+
+        var request = URLRequest(url: baseURL.appendingPathComponent("/upload"))
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = bodyData
+
+        let (data, response) = try await fetch(request)
+        XCTAssertEqual(response.statusCode, 200)
+        XCTAssertEqual(String(data: data, encoding: .utf8), #"{"status":"ok"}"#)
+    }
+
 
     // MARK: - File-based response
 

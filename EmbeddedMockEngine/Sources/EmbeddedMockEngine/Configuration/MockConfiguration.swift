@@ -32,7 +32,7 @@ public struct MockServerSettings: Codable, Sendable {
     /// Global response delay in seconds added to every response.
     public let globalDelay: TimeInterval?
     /// Whether to log each incoming request to stdout.
-    public let logRequests: Bool?
+    public let logRequests: Bool
     /// Address to bind to. Use `"127.0.0.1"` (default) for loopback only,
     /// or `"0.0.0.0"` to accept connections from other apps / devices.
     public let bindAddress: String?
@@ -45,7 +45,7 @@ public struct MockServerSettings: Codable, Sendable {
     ) {
         self.port = port
         self.globalDelay = globalDelay
-        self.logRequests = logRequests
+        self.logRequests = logRequests ?? false
         self.bindAddress = bindAddress
     }
 }
@@ -97,7 +97,8 @@ public struct MockRequestMatcher: Codable, Sendable {
     public let headers: [String: String]?
     /// Query parameters that must be present (subset match).
     public let queryParameters: [String: String]?
-    /// Regular-expression pattern applied to the raw request body (UTF-8 string).
+    /// Regular-expression pattern applied to the request body. For multipart/form-data
+    /// each text part is matched individually; for form-urlencoded the decoded body is matched.
     public let bodyPattern: String?
 
     public init(

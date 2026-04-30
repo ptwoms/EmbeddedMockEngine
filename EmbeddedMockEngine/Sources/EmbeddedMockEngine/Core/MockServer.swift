@@ -105,6 +105,8 @@ final class MockServer: @unchecked Sendable {
             while true {
                 let clientFD = accept(serverFD, nil, nil)
                 guard clientFD >= 0 else {
+                    // Retry interrupted accepts; stop on closure or fatal errors.
+                    if errno == EINTR { continue }
                     continuation.finish()
                     return
                 }

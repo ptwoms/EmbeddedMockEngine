@@ -66,7 +66,7 @@ struct ConfigurationPickerView: View {
         """
         {
           "settings": {
-            "port": 0,
+            "port": 8080,
             "logRequests": true,
             "bindAddress": "127.0.0.1"
           },

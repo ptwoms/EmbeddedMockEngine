@@ -7,18 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		132D688CB88314178AD5F0B4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85983B238A153D9B64E57707 /* ContentView.swift */; };
 		2EF3C37E011088B303D7886B /* EmbeddedMockEngine in Frameworks */ = {isa = PBXBuildFile; productRef = AF94BED8BA33D993A8CCC0A1 /* EmbeddedMockEngine */; };
-		3960065692AFCB3F073F1AEC /* MockEngineAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */; };
-		52A35DADD788E2A8D58CAB08 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6C1978E1408914E440454B /* ServerManager.swift */; };
-		61D57B23D1C634B1B764B3AF /* MockEngineAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */; };
-		6BFD2092F28E4E865AD3175B /* ConfigurationPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */; };
-		6CE03C785D81B287703F2F61 /* ConfigurationPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */; };
 		7F3D406E333911DD5E517937 /* EmbeddedMockEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 6845169CB54A693C60ADEC58 /* EmbeddedMockEngine */; };
 		C82679072F871514001240CD /* EmbeddedMockEngine in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 6845169CB54A693C60ADEC58 /* EmbeddedMockEngine */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		C82679092F871518001240CD /* EmbeddedMockEngine in Embed Frameworks */ = {isa = PBXBuildFile; productRef = AF94BED8BA33D993A8CCC0A1 /* EmbeddedMockEngine */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		F16AFDD3F3B2C94BB89AC5A2 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6C1978E1408914E440454B /* ServerManager.swift */; };
-		F9A434E28A6F8F4579585DA4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85983B238A153D9B64E57707 /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -47,14 +39,43 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		78BE0FA003E39BCF4A65ECBA /* EmbeddedMockEngine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EmbeddedMockEngine; path = ..; sourceTree = SOURCE_ROOT; };
-		85983B238A153D9B64E57707 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9E7E647C4262516C1918399F /* MockEngine.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MockEngine.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF44FCFED857A812A0B37BCB /* MockEngine.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MockEngine.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		CF6C1978E1408914E440454B /* ServerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
-		D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationPickerView.swift; sourceTree = "<group>"; };
-		F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockEngineAppApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C89F7AF62FA1AEA300E01F32 /* Exceptions for "Resources" folder in "MockEngineApp-iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DefaultMockConfig.json,
+			);
+			target = 0EF5F158E3A57345E64DBA72 /* MockEngineApp-iOS */;
+		};
+		C89F7AF92FA1AEB500E01F32 /* Exceptions for "Resources" folder in "MockEngineApp-macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DefaultMockConfig.json,
+			);
+			target = 100C67B52B166015CC49DA5B /* MockEngineApp-macOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		C8243A8D2FA1ADD400BBC51F /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		C8243A972FA1ADD900BBC51F /* Resources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C89F7AF62FA1AEA300E01F32 /* Exceptions for "Resources" folder in "MockEngineApp-iOS" target */,
+				C89F7AF92FA1AEB500E01F32 /* Exceptions for "Resources" folder in "MockEngineApp-macOS" target */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		CF68FEB3A4F219C957EEDA8C /* Frameworks */ = {
@@ -88,29 +109,10 @@
 		3BF4D24EF74ACBE4F340D06E = {
 			isa = PBXGroup;
 			children = (
-				87E0EC00582AC89E5E8DFD57 /* Packages */,
-				835A18F5DD0469368183BEFA /* Sources */,
+				C8243A972FA1ADD900BBC51F /* Resources */,
+				C8243A8D2FA1ADD400BBC51F /* Sources */,
 				370392015ECB8C0BF63DC6EC /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		835A18F5DD0469368183BEFA /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				D12DE2DD1033034E14D080B8 /* ConfigurationPickerView.swift */,
-				85983B238A153D9B64E57707 /* ContentView.swift */,
-				F627E39D20C962C07D4B9CAB /* MockEngineAppApp.swift */,
-				CF6C1978E1408914E440454B /* ServerManager.swift */,
-			);
-			path = Sources;
-			sourceTree = "<group>";
-		};
-		87E0EC00582AC89E5E8DFD57 /* Packages */ = {
-			isa = PBXGroup;
-			children = (
-				78BE0FA003E39BCF4A65ECBA /* EmbeddedMockEngine */,
-			);
-			name = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -122,11 +124,15 @@
 			buildPhases = (
 				133A6EA402052B34D4462AD6 /* Sources */,
 				E5D9D9FC63B0E90D57D2E317 /* Frameworks */,
+				C89F7AF42FA1AE9C00E01F32 /* Resources */,
 				C82679082F871514001240CD /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C8243A8D2FA1ADD400BBC51F /* Sources */,
 			);
 			name = "MockEngineApp-iOS";
 			packageProductDependencies = (
@@ -143,10 +149,14 @@
 				E7FF7D3C199AF44E60AB1EAE /* Sources */,
 				CF68FEB3A4F219C957EEDA8C /* Frameworks */,
 				C826790A2F871518001240CD /* Embed Frameworks */,
+				C89F7AF72FA1AEB000E01F32 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C8243A8D2FA1ADD400BBC51F /* Sources */,
 			);
 			name = "MockEngineApp-macOS";
 			packageProductDependencies = (
@@ -183,7 +193,7 @@
 			mainGroup = 3BF4D24EF74ACBE4F340D06E;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				C82679062F871455001240CD /* XCLocalSwiftPackageReference "../../EmbeddedMockEngine" */,
+				C8243A982FA1AE1800BBC51F /* XCLocalSwiftPackageReference "../EmbeddedMockEngine" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 370392015ECB8C0BF63DC6EC /* Products */;
@@ -196,15 +206,28 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		C89F7AF42FA1AE9C00E01F32 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C89F7AF72FA1AEB000E01F32 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		133A6EA402052B34D4462AD6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6BFD2092F28E4E865AD3175B /* ConfigurationPickerView.swift in Sources */,
-				132D688CB88314178AD5F0B4 /* ContentView.swift in Sources */,
-				3960065692AFCB3F073F1AEC /* MockEngineAppApp.swift in Sources */,
-				52A35DADD788E2A8D58CAB08 /* ServerManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,10 +235,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6CE03C785D81B287703F2F61 /* ConfigurationPickerView.swift in Sources */,
-				F9A434E28A6F8F4579585DA4 /* ContentView.swift in Sources */,
-				61D57B23D1C634B1B764B3AF /* MockEngineAppApp.swift in Sources */,
-				F16AFDD3F3B2C94BB89AC5A2 /* ServerManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -478,9 +497,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		C82679062F871455001240CD /* XCLocalSwiftPackageReference "../../EmbeddedMockEngine" */ = {
+		C8243A982FA1AE1800BBC51F /* XCLocalSwiftPackageReference "../EmbeddedMockEngine" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../EmbeddedMockEngine;
+			relativePath = ../EmbeddedMockEngine;
 		};
 /* End XCLocalSwiftPackageReference section */
 
