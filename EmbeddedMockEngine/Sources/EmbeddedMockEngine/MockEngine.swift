@@ -84,6 +84,8 @@ public actor MockEngine {
     private var routes: [MockRoute] = []
     private var settings: MockServerSettings = MockServerSettings()
     private var responseProvider: ResponseProvider = ResponseProvider()
+    /// Base URL from which TLS cert/key paths (and response file paths) are resolved.
+    private var configBaseURL: URL?
 
     private let server = MockServer()
     private var running = false
@@ -92,6 +94,8 @@ public actor MockEngine {
     private var lastBoundPort: UInt16 = 0
     /// The bind address used at the last successful `start()`.
     private var lastBindAddress: String = "127.0.0.1"
+    /// The TLS config used at the last successful `start()`, retained for restarts.
+    private var lastTLSConfiguration: TLSConfiguration?
 
     #if canImport(UIKit)
     private var lifecycleObserver: LifecycleObserver?
@@ -177,26 +181,43 @@ public actor MockEngine {
 
     /// Starts the mock server and returns the TCP port it is listening on.
     ///
-    /// - Parameter port: Port to bind to. Pass `0` (default) to let the OS
-    ///   choose a free port.
+    /// - Parameters:
+    ///   - port: Port to bind to. Pass `0` (default) to let the OS choose a free port.
+    ///   - tls:  Optional TLS configuration for HTTPS. When provided, cert and key
+    ///           paths are resolved relative to the config base URL (if any).
+    ///           Overrides any TLS configuration set in ``MockServerSettings``.
     /// - Returns: The port number the server is actually listening on.
     @discardableResult
-    public func start(port: UInt16 = 0) async throws -> UInt16 {
+    public func start(port: UInt16 = 0, tls: TLSConfiguration? = nil) async throws -> UInt16 {
         guard !running else { throw MockEngineError.alreadyRunning }
 
         let effectivePort = settings.port ?? port
         let effectiveBindAddress = settings.bindAddress ?? "127.0.0.1"
+        // Explicit `tls` parameter takes precedence over settings.
+        let effectiveTLS = tls ?? settings.tlsConfiguration
         let handler = makeRequestHandler()
+
+        // Resolve TLS cert/key paths relative to the config base URL.
+        let resolvedTLS: TLSConfiguration? = effectiveTLS.map { cfg in
+            TLSConfiguration(
+                certificateFile: cfg.resolvedCertificateURL(relativeTo: configBaseURL).path,
+                privateKeyFile:  cfg.resolvedPrivateKeyURL(relativeTo: configBaseURL).path
+            )
+        }
+
         let assignedPort = try server.start(
             port: effectivePort,
             bindAddress: effectiveBindAddress,
+            tls: resolvedTLS,
             requestHandler: handler
         )
         running = true
         lastBoundPort = assignedPort
         lastBindAddress = effectiveBindAddress
+        lastTLSConfiguration = resolvedTLS
         if settings.logRequests {
-            print("[MockEngine] Server started on \(effectiveBindAddress):\(assignedPort)")
+            let scheme = resolvedTLS != nil ? "https" : "http"
+            print("[MockEngine] Server started on \(scheme)://\(effectiveBindAddress):\(assignedPort)")
         }
 
         #if canImport(UIKit)
@@ -219,10 +240,12 @@ public actor MockEngine {
         #endif
         server.stop()
         if settings.logRequests {
-            print("[MockEngine] Server stopped on \(lastBindAddress ?? "unknown"):\(lastBoundPort)")
+            let scheme = lastTLSConfiguration != nil ? "https" : "http"
+            print("[MockEngine] Server stopped on \(scheme)://\(lastBindAddress):\(lastBoundPort)")
         }
         running = false
         lastBoundPort = 0
+        lastTLSConfiguration = nil
     }
 
     // MARK: - Introspection
@@ -288,6 +311,7 @@ public actor MockEngine {
         routes = config.routes
         sortRoutes()
         responseProvider = ResponseProvider(baseURL: baseURL, bundle: bundle)
+        configBaseURL = baseURL
     }
 
     private func sortRoutes() {
@@ -345,16 +369,19 @@ public actor MockEngine {
 
         let portToReuse = lastBoundPort
         let bindAddr = lastBindAddress
+        let tlsConfig = lastTLSConfiguration
         let handler = makeRequestHandler()
 
         do {
             let newPort = try server.start(
                 port: portToReuse,
                 bindAddress: bindAddr,
+                tls: tlsConfig,
                 requestHandler: handler
             )
             running = true
             lastBoundPort = newPort
+            lastTLSConfiguration = tlsConfig
             foregroundRestartHandler?(newPort)
         } catch {
             print("[MockEngine] Auto-restart after foreground failed: \(error)")

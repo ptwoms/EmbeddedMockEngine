@@ -16,6 +16,49 @@ public enum MockServerError: Error, Sendable {
     case alreadyRunning
     case notRunning
     case cancelled
+    case tlsNotSupported
+}
+
+// MARK: - SocketReadWriter
+
+/// Abstracts reading and writing over a socket so plain-TCP and TLS connections
+/// can share the same HTTP parsing / serialisation logic.
+protocol SocketReadWriter: AnyObject {
+    /// Reads up to `maxLength` bytes. Returns `nil` on error or connection close.
+    func read(maxLength: Int) -> Data?
+    /// Writes all bytes of `data`.
+    func write(_ data: Data)
+    /// Performs any protocol-level shutdown (e.g. TLS close_notify).
+    func close()
+}
+
+// MARK: - PlainSocketReadWriter
+
+/// Plain (unencrypted) socket I/O using POSIX `recv` / `send`.
+private final class PlainSocketReadWriter: SocketReadWriter {
+    private let fd: Int32
+
+    init(fd: Int32) { self.fd = fd }
+
+    func read(maxLength: Int) -> Data? {
+        var buf = [UInt8](repeating: 0, count: maxLength)
+        let n = recv(fd, &buf, maxLength, 0)
+        guard n > 0 else { return nil }
+        return Data(buf[0..<n])
+    }
+
+    func write(_ data: Data) {
+        var remaining = data
+        while !remaining.isEmpty {
+            let written = remaining.withUnsafeBytes { ptr in
+                send(fd, ptr.baseAddress!, ptr.count, 0)
+            }
+            guard written > 0 else { return }
+            remaining = remaining.dropFirst(written)
+        }
+    }
+
+    func close() {}
 }
 
 // MARK: - MockServer
@@ -37,6 +80,10 @@ final class MockServer: @unchecked Sendable {
     private var connectionsContinuation: AsyncStream<Int32>.Continuation?
     private var serverTask: Task<Void, Never>?
 
+#if canImport(Security)
+    private var tlsIdentityLoader: TLSIdentityLoader?
+#endif
+
     var port: UInt16 {
         stateLock.withLock { _port }
     }
@@ -48,13 +95,33 @@ final class MockServer: @unchecked Sendable {
     // MARK: - Public interface
 
     /// Starts the server and returns the port it is listening on.
-    /// Pass `port: 0` to let the OS pick a free port.
-    /// Pass `bindAddress` to control which interface to listen on (default: loopback).
+    ///
+    /// - Parameters:
+    ///   - port:           Port to bind to. Pass `0` to let the OS pick a free port.
+    ///   - bindAddress:    Network interface to bind to (default: loopback).
+    ///   - tls:            Optional TLS configuration. When provided the server
+    ///                     accepts HTTPS connections with TLS 1.2 or newer.
+    ///                     Requires Darwin (macOS / iOS); throws
+    ///                     `MockServerError.tlsNotSupported` on other platforms.
+    ///   - requestHandler: Closure called for every successfully parsed request.
     func start(
         port: UInt16,
         bindAddress: String = "127.0.0.1",
+        tls: TLSConfiguration? = nil,
         requestHandler: @escaping @Sendable (HTTPRequest) async -> HTTPResponse
     ) throws -> UInt16 {
+#if canImport(Security)
+        if let tls {
+            let loader = try TLSIdentityLoader(
+                certificateURL: tls.resolvedCertificateURL(relativeTo: nil),
+                privateKeyURL:  tls.resolvedPrivateKeyURL(relativeTo: nil)
+            )
+            stateLock.withLock { tlsIdentityLoader = loader }
+        }
+#else
+        if tls != nil { throw MockServerError.tlsNotSupported }
+#endif
+
         try stateLock.withLock {
             guard serverFD < 0 else { throw MockServerError.alreadyRunning }
 
@@ -89,6 +156,11 @@ final class MockServer: @unchecked Sendable {
 
         serverTask?.cancel()
         serverTask = nil
+
+#if canImport(Security)
+        stateLock.withLock { tlsIdentityLoader }?.cleanup()
+        stateLock.withLock { tlsIdentityLoader = nil }
+#endif
     }
 
     // MARK: - Accept loop
@@ -145,48 +217,49 @@ final class MockServer: @unchecked Sendable {
         // Set a receive timeout so a slow/malicious client can't stall us.
         setReceiveTimeout(clientFD, seconds: 5)
 
+        // Build the appropriate read/write wrapper (plain TCP or TLS).
+        let io: SocketReadWriter
+#if canImport(Security)
+        if let identity = stateLock.withLock({ tlsIdentityLoader?.identity }) {
+            guard let tlsIO = try? TLSSocketReadWriter(fd: clientFD, identity: identity) else {
+                PlainSocketReadWriter(fd: clientFD).write(HTTPResponseSerializer.serialize(.badRequest()))
+                return
+            }
+            io = tlsIO
+        } else {
+            io = PlainSocketReadWriter(fd: clientFD)
+        }
+#else
+        io = PlainSocketReadWriter(fd: clientFD)
+#endif
+
+        defer { io.close() }
+
         guard
-            let requestData = readHTTPRequest(from: clientFD),
+            let requestData = readHTTPRequest(from: io),
             let request = HTTPParser.parse(data: requestData)
         else {
-            let response = HTTPResponseSerializer.serialize(.badRequest())
-            writeAll(fd: clientFD, data: response)
+            io.write(HTTPResponseSerializer.serialize(.badRequest()))
             return
         }
 
         let response = await requestHandler(request)
-        let responseData = HTTPResponseSerializer.serialize(response)
-        writeAll(fd: clientFD, data: responseData)
+        io.write(HTTPResponseSerializer.serialize(response))
     }
 
     // MARK: - Socket I/O helpers
 
-    /// Reads bytes from `fd` until a complete HTTP request is accumulated.
-    private func readHTTPRequest(from fd: Int32) -> Data? {
+    /// Reads bytes from `io` until a complete HTTP request is accumulated.
+    private func readHTTPRequest(from io: SocketReadWriter) -> Data? {
         var buffer = Data()
-        let chunkSize = 4096
-        var chunk = [UInt8](repeating: 0, count: chunkSize)
 
         while true {
-            let bytesRead = recv(fd, &chunk, chunkSize, 0)
-            if bytesRead <= 0 { break }
-            buffer.append(contentsOf: chunk[0..<bytesRead])
+            guard let chunk = io.read(maxLength: 4096), !chunk.isEmpty else { break }
+            buffer.append(chunk)
             if HTTPParser.isComplete(buffer) { break }
         }
 
         return buffer.isEmpty ? nil : buffer
-    }
-
-    /// Writes all bytes of `data` to `fd`.
-    private func writeAll(fd: Int32, data: Data) {
-        var remaining = data
-        while !remaining.isEmpty {
-            let written = remaining.withUnsafeBytes { ptr in
-                send(fd, ptr.baseAddress!, ptr.count, 0)
-            }
-            guard written > 0 else { return }
-            remaining = remaining.dropFirst(written)
-        }
     }
 
     /// Sets `SO_RCVTIMEO` on the socket to prevent indefinite blocking.

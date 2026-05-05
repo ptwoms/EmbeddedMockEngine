@@ -36,17 +36,23 @@ public struct MockServerSettings: Codable, Sendable {
     /// Address to bind to. Use `"127.0.0.1"` (default) for loopback only,
     /// or `"0.0.0.0"` to accept connections from other apps / devices.
     public let bindAddress: String?
+    /// Optional TLS configuration. When set, the server listens over HTTPS
+    /// with TLS 1.2 or newer. Paths are resolved relative to the config file
+    /// directory when loaded from JSON. Requires macOS 11+ or iOS 14+.
+    public let tlsConfiguration: TLSConfiguration?
 
     public init(
         port: UInt16? = nil,
         globalDelay: TimeInterval? = nil,
         logRequests: Bool? = nil,
-        bindAddress: String? = nil
+        bindAddress: String? = nil,
+        tlsConfiguration: TLSConfiguration? = nil
     ) {
         self.port = port
         self.globalDelay = globalDelay
         self.logRequests = logRequests ?? false
         self.bindAddress = bindAddress
+        self.tlsConfiguration = tlsConfiguration
     }
 }
 
