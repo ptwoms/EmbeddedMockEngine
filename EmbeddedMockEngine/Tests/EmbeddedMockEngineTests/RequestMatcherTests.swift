@@ -183,6 +183,94 @@ final class RequestMatcherTests: XCTestCase {
         XCTAssertFalse(RequestMatcher.matches(request: req, against: matcher))
     }
 
+    // MARK: - Multipart body pattern matching
+
+    func test_bodyPattern_multipart_matchesTextPart() {
+        let boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+        var body = Data()
+        body.append(Data("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"username\"\r\n\r\n".utf8))
+        body.append(Data("Alice\r\n".utf8))
+        body.append(Data("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"avatar\"; filename=\"photo.png\"\r\n".utf8))
+        body.append(Data("Content-Type: image/png\r\n\r\n".utf8))
+        body.append(Data([0x89, 0x50, 0x4E, 0x47, 0xFF, 0xFE])) // binary PNG-like bytes
+        body.append(Data("\r\n".utf8))
+        body.append(Data("------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n".utf8))
+
+        let req = makeRequest(
+            method: "POST",
+            path: "/upload",
+            headers: ["content-type": "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"],
+            body: body
+        )
+        let matcher = makeMatcher(bodyPattern: "Alice")
+        XCTAssertTrue(RequestMatcher.matches(request: req, against: matcher))
+    }
+
+    func test_bodyPattern_multipart_doesNotMatchBinaryPart() {
+        var body = Data()
+        body.append(Data("--boundary123\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"file\"; filename=\"data.bin\"\r\n".utf8))
+        body.append(Data("Content-Type: application/octet-stream\r\n\r\n".utf8))
+        body.append(Data([0x00, 0x01, 0x02, 0x03]))
+        body.append(Data("\r\n".utf8))
+        body.append(Data("--boundary123--\r\n".utf8))
+
+        let req = makeRequest(
+            method: "POST",
+            path: "/upload",
+            headers: ["content-type": "multipart/form-data; boundary=boundary123"],
+            body: body
+        )
+        // Pattern that won't match any text part (there are none)
+        let matcher = makeMatcher(bodyPattern: "something")
+        XCTAssertFalse(RequestMatcher.matches(request: req, against: matcher))
+    }
+
+    func test_bodyPattern_multipart_noMatchReturnsText() {
+        var body = Data()
+        body.append(Data("--b\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"field\"\r\n\r\n".utf8))
+        body.append(Data("hello\r\n".utf8))
+        body.append(Data("--b--\r\n".utf8))
+
+        let req = makeRequest(
+            method: "POST",
+            path: "/form",
+            headers: ["content-type": "multipart/form-data; boundary=b"],
+            body: body
+        )
+        let matcher = makeMatcher(bodyPattern: "world")
+        XCTAssertFalse(RequestMatcher.matches(request: req, against: matcher))
+    }
+
+    // MARK: - Form-urlencoded body pattern matching
+
+    func test_bodyPattern_formUrlencoded_matches() {
+        let body = "username=Alice&action=login".data(using: .utf8)
+        let req = makeRequest(
+            method: "POST",
+            path: "/login",
+            headers: ["content-type": "application/x-www-form-urlencoded"],
+            body: body
+        )
+        let matcher = makeMatcher(bodyPattern: "Alice")
+        XCTAssertTrue(RequestMatcher.matches(request: req, against: matcher))
+    }
+
+    func test_bodyPattern_formUrlencoded_doesNotMatch() {
+        let body = "username=Bob&action=login".data(using: .utf8)
+        let req = makeRequest(
+            method: "POST",
+            path: "/login",
+            headers: ["content-type": "application/x-www-form-urlencoded"],
+            body: body
+        )
+        let matcher = makeMatcher(bodyPattern: "Alice")
+        XCTAssertFalse(RequestMatcher.matches(request: req, against: matcher))
+    }
+
     // MARK: - Combined criteria
 
     func test_combined_allCriteria_match() {

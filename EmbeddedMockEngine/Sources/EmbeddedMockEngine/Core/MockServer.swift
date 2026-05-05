@@ -49,14 +49,16 @@ final class MockServer: @unchecked Sendable {
 
     /// Starts the server and returns the port it is listening on.
     /// Pass `port: 0` to let the OS pick a free port.
+    /// Pass `bindAddress` to control which interface to listen on (default: loopback).
     func start(
         port: UInt16,
+        bindAddress: String = "127.0.0.1",
         requestHandler: @escaping @Sendable (HTTPRequest) async -> HTTPResponse
     ) throws -> UInt16 {
         try stateLock.withLock {
             guard serverFD < 0 else { throw MockServerError.alreadyRunning }
 
-            let (fd, assignedPort) = try Self.makeListeningSocket(port: port)
+            let (fd, assignedPort) = try Self.makeListeningSocket(port: port, bindAddress: bindAddress)
             serverFD = fd
             _port = assignedPort
             return assignedPort
@@ -103,6 +105,8 @@ final class MockServer: @unchecked Sendable {
             while true {
                 let clientFD = accept(serverFD, nil, nil)
                 guard clientFD >= 0 else {
+                    // Retry interrupted accepts; stop on closure or fatal errors.
+                    if errno == EINTR { continue }
                     continuation.finish()
                     return
                 }
@@ -197,8 +201,12 @@ final class MockServer: @unchecked Sendable {
 
     // MARK: - Socket creation
 
-    private static func makeListeningSocket(port: UInt16) throws -> (Int32, UInt16) {
+    private static func makeListeningSocket(port: UInt16, bindAddress: String = "127.0.0.1") throws -> (Int32, UInt16) {
+#if canImport(Darwin)
         let fd = socket(AF_INET, Int32(SOCK_STREAM), 0)
+#else
+        let fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+#endif
         guard fd >= 0 else {
             throw MockServerError.socketCreationFailed(errno)
         }
@@ -210,11 +218,11 @@ final class MockServer: @unchecked Sendable {
             throw MockServerError.socketOptionFailed(errno)
         }
 
-        // Bind to loopback only.
+        // Bind to the requested address.
         var addr = sockaddr_in()
         addr.sin_family  = sa_family_t(AF_INET)
         addr.sin_port    = port.bigEndian
-        addr.sin_addr.s_addr = loopbackAddress()
+        addr.sin_addr.s_addr = resolveBindAddress(bindAddress)
 
         let bindResult = withUnsafeBytes(of: &addr) { ptr in
             bind(fd, ptr.baseAddress!.assumingMemoryBound(to: sockaddr.self),
@@ -243,11 +251,20 @@ final class MockServer: @unchecked Sendable {
 
     // MARK: - Platform helpers
 
-    private static func loopbackAddress() -> in_addr_t {
+    /// Resolves a string bind address (e.g. `"127.0.0.1"`, `"0.0.0.0"`) to
+    /// an `in_addr_t` suitable for `sockaddr_in.sin_addr.s_addr`.
+    private static func resolveBindAddress(_ address: String) -> in_addr_t {
+        if address == "0.0.0.0" {
+            return in_addr_t(0) // INADDR_ANY
+        }
+        var inAddr = in_addr()
+        if inet_pton(AF_INET, address, &inAddr) == 1 {
+            return inAddr.s_addr
+        }
+        // Fallback to loopback
 #if canImport(Darwin)
         return INADDR_LOOPBACK.bigEndian
 #else
-        // INADDR_LOOPBACK == 0x7f000001 (127.0.0.1)
         return UInt32(0x7f000001).bigEndian
 #endif
     }
