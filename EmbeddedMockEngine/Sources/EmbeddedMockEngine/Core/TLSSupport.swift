@@ -265,7 +265,8 @@ final class TLSSocketReadWriter: SocketReadWriter {
 
 /// SecureTransport read callback — reads from the raw socket FD.
 private let tlsRead: SSLReadFunc = { connection, data, dataLength in
-    let fd = Int32(bitPattern: UInt(bitPattern: connection))
+    // Recover the Int32 fd: it was stored as Int(fd) via UnsafeRawPointer(bitPattern:)
+    let fd = Int32(Int(bitPattern: connection))
     let n  = Darwin.recv(fd, data!, dataLength.pointee, 0)
     if n > 0 {
         dataLength.pointee = n
@@ -282,7 +283,8 @@ private let tlsRead: SSLReadFunc = { connection, data, dataLength in
 
 /// SecureTransport write callback — writes to the raw socket FD.
 private let tlsWrite: SSLWriteFunc = { connection, data, dataLength in
-    let fd = Int32(bitPattern: UInt(bitPattern: connection))
+    // Recover the Int32 fd: it was stored as Int(fd) via UnsafeRawPointer(bitPattern:)
+    let fd = Int32(Int(bitPattern: connection))
     let n  = Darwin.send(fd, data!, dataLength.pointee, 0)
     if n > 0 {
         dataLength.pointee = n
